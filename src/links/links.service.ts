@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { Link } from './entities/link.entity';
 import { LinkFactory } from './factories/link.factory';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class LinksService {
@@ -23,5 +24,17 @@ export class LinksService {
       where: { userId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async deleteByCodeAndUserId(code: string, userId: string): Promise<void> {
+    const link = await this.linkRepository.findOne({ where: { code, userId } });
+
+    if (!link) {
+      throw new NotFoundException(
+        'Link not found or you do not have permission to delete this link.',
+      );
+    }
+
+    await this.linkRepository.remove(link);
   }
 }

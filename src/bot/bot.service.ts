@@ -24,6 +24,9 @@ export class BotService {
 
     // Handle /list command
     this.bot.command('list', (ctx) => this.listLinks(ctx));
+
+    // Handle /delete command
+    this.bot.command('delete', (ctx) => this.deleteLink(ctx));
   }
 
   private sendWelcomeMessage(ctx: any): void {
@@ -34,6 +37,7 @@ export class BotService {
     - Use /save <url> to save a link.
     - Use /list to see all your saved links.
     - Use /get <code> to retrieve a link by its unique code.
+    - Use /delete <code> to delete a link by its unique code.
 
     Happy saving! 😊
     `;
@@ -80,6 +84,26 @@ export class BotService {
       ctx.reply(response);
     } catch {
       ctx.reply('Error: Unable to retrieve the list of links.');
+    }
+  }
+
+  private async deleteLink(ctx: any): Promise<void> {
+    const message = ctx.message.text.split(' ');
+
+    if (message.length < 2) {
+      return ctx.reply(
+        'Please provide the unique code of the link you want to delete.',
+      );
+    }
+
+    const code = message[1];
+    const userId = ctx.message.from.id; // Get user ID from the Telegram context
+
+    try {
+      await this.linksService.deleteByCodeAndUserId(code, userId);
+      ctx.reply('Link deleted successfully.');
+    } catch (error) {
+      ctx.reply(error.message || 'Error: Unable to delete the link.');
     }
   }
 }
