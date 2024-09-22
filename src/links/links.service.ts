@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { Link } from './entities/link.entity';
 import { LinkFactory } from './factories/link.factory';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 
 @Injectable()
 export class LinksService {
@@ -20,8 +20,9 @@ export class LinksService {
       createLinkDto.userId,
     );
     if (existingLink) {
-      throw new Error('You have already saved this link.');
+      throw new ConflictException('You have already saved this link.');
     }
+
     const link = await this.linkFactory.create(createLinkDto);
     return this.linkRepository.save(link);
   }

@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { IsUrl } from 'class-validator';
 
 @Entity()
 export class Link {
@@ -14,7 +13,6 @@ export class Link {
   id: string;
 
   @Column()
-  @IsUrl()
   url: string;
 
   @Index()
