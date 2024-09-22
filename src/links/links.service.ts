@@ -30,11 +30,25 @@ export class LinksService {
     return this.linkRepository.findOne({ where: { url, userId } });
   }
 
-  async findAllByUserId(userId: string): Promise<Link[]> {
-    return this.linkRepository.find({
+  async findAllByUserId(
+    userId: string,
+    page: number = 1,
+    perPage: number = 5,
+  ): Promise<{ links: Link[]; totalPages: number; currentPage: number }> {
+    const [links, total] = await this.linkRepository.findAndCount({
       where: { userId },
       order: { createdAt: 'DESC' },
+      take: perPage,
+      skip: (page - 1) * perPage,
     });
+
+    const totalPages = Math.ceil(total / perPage);
+
+    return {
+      links,
+      totalPages,
+      currentPage: page,
+    };
   }
 
   async deleteByCodeAndUserId(code: string, userId: string): Promise<void> {

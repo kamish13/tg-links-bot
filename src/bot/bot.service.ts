@@ -1,57 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { InjectBot } from 'nestjs-telegraf';
-import { Telegraf } from 'telegraf';
 import { LinksService } from '../links/links.service';
 import { CreateLinkDto } from '../links/dto/create-link.dto';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
+import { Markup } from 'telegraf';
 
 @Injectable()
 export class BotService {
-  constructor(
-    @InjectBot() private readonly bot: Telegraf,
-    private readonly linksService: LinksService,
-  ) {
-    this.setupBot();
-  }
+  constructor(private readonly linksService: LinksService) {}
 
-  private setupBot(): void {
-    // Handle /start command
-    this.bot.start((ctx) => this.sendWelcomeMessage(ctx));
-
-    // Handle /save command
-    this.bot.command('save', (ctx) => this.saveLink(ctx));
-
-    // Handle /list command
-    this.bot.command('list', (ctx) => this.listLinks(ctx));
-
-    // Handle /delete command
-    this.bot.command('delete', (ctx) => this.deleteLink(ctx));
-
-    // Handle /get command
-    this.bot.command('get', (ctx) => this.getLink(ctx));
-  }
-
-  private async getLink(ctx: any): Promise<void> {
-    const message = ctx.message.text.split(' ');
-
-    if (message.length < 2) {
-      return ctx.reply(
-        'Please provide the unique code of the link you want to retrieve.',
-      );
-    }
-
-    const code = message[1];
-
-    try {
-      const link = await this.linksService.findByCode(code);
-      ctx.reply(`Here is the link: ${link.url}`);
-    } catch (error) {
-      ctx.reply(error.message || 'Error: Unable to retrieve the link.');
-    }
-  }
-
-  private sendWelcomeMessage(ctx: any): void {
+  public sendWelcomeMessage(ctx: any): void {
     const welcomeMessage = `
     Welcome to the Link Saver Bot! 🚀
 
@@ -66,7 +24,7 @@ export class BotService {
     ctx.reply(welcomeMessage);
   }
 
-  private async saveLink(ctx: any): Promise<void> {
+  public async saveLink(ctx: any): Promise<void> {
     const message = ctx.message.text.split(' ');
 
     if (message.length < 2) {
@@ -94,26 +52,74 @@ export class BotService {
     }
   }
 
-  private async listLinks(ctx: any): Promise<void> {
-    const userId = ctx.message.from.id;
+  public async listLinks(ctx: any): Promise<void> {
+    const userId = ctx.message.from.id.toString();
+    const page = 1;
+    const perPage = 5;
 
+    await this.sendLinksPage(ctx, userId, page, perPage);
+  }
+
+  public async sendLinksPage(
+    ctx: any,
+    userId: string,
+    page: number,
+    perPage: number,
+  ): Promise<void> {
     try {
-      const links = await this.linksService.findAllByUserId(userId);
+      const { links, totalPages, currentPage } =
+        await this.linksService.findAllByUserId(userId, page, perPage);
 
       if (links.length === 0) {
         return ctx.reply('You have no saved links.');
       }
 
       const response = links
-        .map((link) => `${link.code}: ${link.url}`)
+        .map(
+          (link, index) =>
+            `${(currentPage - 1) * perPage + index + 1}. ${link.code}: ${link.url}`,
+        )
         .join('\n');
-      ctx.reply(response);
-    } catch {
+
+      const keyboard = Markup.inlineKeyboard([
+        ...(currentPage > 1
+          ? [Markup.button.callback('⬅️ Previous', `list_${currentPage - 1}`)]
+          : []),
+        ...(currentPage < totalPages
+          ? [Markup.button.callback('Next ➡️', `list_${currentPage + 1}`)]
+          : []),
+      ]);
+
+      await ctx.reply(
+        `Your links (Page ${currentPage}/${totalPages}):\n\n${response}`,
+        keyboard,
+      );
+    } catch (error) {
+      console.error('Error retrieving links:', error);
       ctx.reply('Error: Unable to retrieve the list of links.');
     }
   }
 
-  private async deleteLink(ctx: any): Promise<void> {
+  public async getLink(ctx: any): Promise<void> {
+    const message = ctx.message.text.split(' ');
+
+    if (message.length < 2) {
+      return ctx.reply(
+        'Please provide the unique code of the link you want to retrieve.',
+      );
+    }
+
+    const code = message[1];
+
+    try {
+      const link = await this.linksService.findByCode(code);
+      ctx.reply(`Here is the link: ${link.url}`);
+    } catch (error) {
+      ctx.reply(error.message || 'Error: Unable to retrieve the link.');
+    }
+  }
+
+  public async deleteLink(ctx: any): Promise<void> {
     const message = ctx.message.text.split(' ');
 
     if (message.length < 2) {

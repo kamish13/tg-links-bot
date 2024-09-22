@@ -1,30 +1,47 @@
-import { Ctx, Update, Command } from 'nestjs-telegraf';
+import { Ctx, Update, Command, Action } from 'nestjs-telegraf';
 import { LinksService } from '../links/links.service';
-import { CreateLinkDto } from '../links/dto/create-link.dto';
+import { BotService } from './bot.service';
 
 @Update()
 export class BotUpdate {
-  constructor(private readonly linksService: LinksService) {}
+  constructor(
+    private readonly linksService: LinksService,
+    private readonly botService: BotService,
+  ) {}
+
+  @Command('start')
+  async onStart(@Ctx() ctx: any) {
+    this.botService.sendWelcomeMessage(ctx);
+  }
 
   @Command('save')
   async saveLink(@Ctx() ctx: any) {
-    const message = ctx.message.text.split(' ');
+    await this.botService.saveLink(ctx);
+  }
 
-    if (message.length < 2) {
-      return ctx.reply('Please provide a URL to save.');
-    }
+  @Command('list')
+  async listLinks(@Ctx() ctx: any) {
+    await this.botService.listLinks(ctx);
+  }
 
-    const url = message[1];
+  @Command('get')
+  async getLink(@Ctx() ctx: any) {
+    await this.botService.getLink(ctx);
+  }
 
-    try {
-      const createLinkDto: CreateLinkDto = {
-        url,
-        userId: ctx.from.id.toString(),
-      };
-      const savedLink = await this.linksService.create(createLinkDto);
-      ctx.reply(`Link saved! Your unique code is: ${savedLink.code}`);
-    } catch {
-      ctx.reply('Error: Invalid URL or unable to save the link.');
-    }
+  @Command('delete')
+  async deleteLink(@Ctx() ctx: any) {
+    await this.botService.deleteLink(ctx);
+  }
+
+  // Handle pagination callback
+  @Action(/^list_(\d+)$/)
+  async handlePaginationCallback(@Ctx() ctx: any) {
+    const page = parseInt(ctx.match[1]);
+    const userId = ctx.from.id.toString();
+    const perPage = 5;
+
+    await ctx.answerCbQuery();
+    await this.botService.sendLinksPage(ctx, userId, page, perPage);
   }
 }
