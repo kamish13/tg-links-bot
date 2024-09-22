@@ -85,8 +85,12 @@ export class BotService {
     try {
       const savedLink = await this.linksService.create(createLinkDto);
       ctx.reply(`Link saved! Your unique code is: ${savedLink.code}`);
-    } catch {
-      ctx.reply('Error: Invalid URL or unable to save the link.');
+    } catch (error) {
+      if (error.message === 'You have already saved this link.') {
+        ctx.reply('You have already saved this link.');
+      } else {
+        ctx.reply('Error: Unable to save the link.');
+      }
     }
   }
 
@@ -119,7 +123,7 @@ export class BotService {
     }
 
     const code = message[1];
-    const userId = ctx.message.from.id; // Get user ID from the Telegram context
+    const userId = ctx.message.from.id;
 
     try {
       await this.linksService.deleteByCodeAndUserId(code, userId);

@@ -3,6 +3,7 @@ import { Link } from '../entities/link.entity';
 import { CreateLinkDto } from '../dto/create-link.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { generateUniqueCode } from '../../utils/code-generator';
 
 @Injectable()
 export class LinkFactory {
@@ -15,21 +16,9 @@ export class LinkFactory {
 
     const link = new Link();
     link.url = url;
-    link.code = await this.generateUniqueCode();
+    link.code = await generateUniqueCode(this.linkRepository);
     link.userId = userId;
 
     return link;
-  }
-
-  private async generateUniqueCode(): Promise<string> {
-    let code: string;
-    let linkWithCode: Link | null;
-
-    do {
-      code = Math.random().toString(36).substring(2, 8);
-
-      linkWithCode = await this.linkRepository.findOne({ where: { code } });
-    } while (linkWithCode);
-    return code;
   }
 }
