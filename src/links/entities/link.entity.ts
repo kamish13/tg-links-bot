@@ -21,6 +21,9 @@ export class Link {
   @Column({ unique: true })
   code: string;
 
+  @Column()
+  userId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

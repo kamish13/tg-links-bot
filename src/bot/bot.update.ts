@@ -17,7 +17,10 @@ export class BotUpdate {
     const url = message[1];
 
     try {
-      const createLinkDto: CreateLinkDto = { url };
+      const createLinkDto: CreateLinkDto = {
+        url,
+        userId: ctx.from.id.toString(),
+      };
       const savedLink = await this.linksService.create(createLinkDto);
       ctx.reply(`Link saved! Your unique code is: ${savedLink.code}`);
     } catch {

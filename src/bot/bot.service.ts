@@ -45,8 +45,10 @@ export class BotService {
     }
 
     const url = message[1];
+    const userId = ctx.message.from.id;
 
-    const createLinkDto = plainToInstance(CreateLinkDto, { url });
+    const createLinkDto = plainToInstance(CreateLinkDto, { url, userId });
+
     const errors = await validate(createLinkDto);
     if (errors.length > 0) {
       return ctx.reply('The provided value must be a valid URL.');
