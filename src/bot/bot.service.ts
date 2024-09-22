@@ -27,6 +27,28 @@ export class BotService {
 
     // Handle /delete command
     this.bot.command('delete', (ctx) => this.deleteLink(ctx));
+
+    // Handle /get command
+    this.bot.command('get', (ctx) => this.getLink(ctx));
+  }
+
+  private async getLink(ctx: any): Promise<void> {
+    const message = ctx.message.text.split(' ');
+
+    if (message.length < 2) {
+      return ctx.reply(
+        'Please provide the unique code of the link you want to retrieve.',
+      );
+    }
+
+    const code = message[1];
+
+    try {
+      const link = await this.linksService.findByCode(code);
+      ctx.reply(`Here is the link: ${link.url}`);
+    } catch (error) {
+      ctx.reply(error.message || 'Error: Unable to retrieve the link.');
+    }
   }
 
   private sendWelcomeMessage(ctx: any): void {

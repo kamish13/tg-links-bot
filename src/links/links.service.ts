@@ -37,4 +37,14 @@ export class LinksService {
 
     await this.linkRepository.remove(link);
   }
+
+  async findByCode(code: string): Promise<Link> {
+    const link = await this.linkRepository.findOne({ where: { code } });
+
+    if (!link) {
+      throw new NotFoundException('Link not found.');
+    }
+
+    return link;
+  }
 }
