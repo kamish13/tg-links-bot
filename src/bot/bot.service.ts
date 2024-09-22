@@ -21,6 +21,9 @@ export class BotService {
 
     // Handle /save command
     this.bot.command('save', (ctx) => this.saveLink(ctx));
+
+    // Handle /list command
+    this.bot.command('list', (ctx) => this.listLinks(ctx));
   }
 
   private sendWelcomeMessage(ctx: any): void {
@@ -58,6 +61,25 @@ export class BotService {
       ctx.reply(`Link saved! Your unique code is: ${savedLink.code}`);
     } catch {
       ctx.reply('Error: Invalid URL or unable to save the link.');
+    }
+  }
+
+  private async listLinks(ctx: any): Promise<void> {
+    const userId = ctx.message.from.id;
+
+    try {
+      const links = await this.linksService.findAllByUserId(userId);
+
+      if (links.length === 0) {
+        return ctx.reply('You have no saved links.');
+      }
+
+      const response = links
+        .map((link) => `${link.code}: ${link.url}`)
+        .join('\n');
+      ctx.reply(response);
+    } catch {
+      ctx.reply('Error: Unable to retrieve the list of links.');
     }
   }
 }

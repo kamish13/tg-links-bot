@@ -17,4 +17,11 @@ export class LinksService {
     const link = await this.linkFactory.create(createLinkDto);
     return this.linkRepository.save(link);
   }
+
+  async findAllByUserId(userId: string): Promise<Link[]> {
+    return this.linkRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
 }
